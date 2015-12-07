@@ -1,0 +1,271 @@
+<html>
+
+	<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.6.1/jquery.min.js'></script>
+    <head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>the web</title>
+	<meta name="description" content="a crappy site to search for fast food restaurant" />
+	<script async defer
+      src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBYC3-rhpedFkmwlPWU8vK-ElJXefhXzCM&libraries=places&callback=initMap">
+    </script>
+<style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #mapsection {
+      float: right;
+        min-width: 140px;
+		width: 100%;
+		min-height: 500px;
+		height: 100%;
+		position: relative;
+      }
+	  #map{
+		margin: 0%;
+		margin-right: 0%; 
+		height: 100%;
+		width:100%;
+		border: 0px solid blue;
+	  }
+			.controls {
+			margin-top: 10px;
+			border: 1px solid transparent;
+			border-radius: 2px 0 0 2px;
+			box-sizing: border-box;
+			-moz-box-sizing: border-box;
+			height: 32px;
+			outline: none;
+			box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+		}
+	#pac-input {
+		background-color: #fff;
+		font-family: Roboto;
+		font-size: 15px;
+		font-weight: 300;
+		margin-left: 12px;
+		padding: 0 11px 0 13px;
+		text-overflow: ellipsis;
+		width: 300px;
+	}
+	#pac-input:focus {
+	  border-color: #4d90fe;
+	}
+	.pac-container {
+	  font-family: Roboto;
+	}
+
+	#pac-input1 {
+		background-color: #fff;
+		font-family: Roboto;
+		font-size: 15px;
+		font-weight: 300;
+		margin-right: 12px;
+		padding: 11px 11px 0 13px;
+		margin-top:12px;
+		text-overflow: ellipsis;
+		width: 100px;
+		opacity: 0.3;
+		filter: alpha(opacity=40);
+		border-radius: 5px;
+		-moz-border-radius: 2px;
+		-webkit-border-radius: 2px;
+	}
+	#pac-input1:focus {
+	  border-color: #4d90fe;
+	}
+	#pac-input1:hover {
+		opacity: 1;
+	}
+	.pac-container1 {
+	  font-family: Roboto;
+	}
+	#type-selector {
+	  color: #fff;
+	  background-color: #4d90fe;
+	  padding: 5px 11px 0px 11px;
+	}
+
+	#type-selector label {
+	  font-family: Roboto;
+	  font-size: 13px;
+	  font-weight: 300;
+	}
+
+	  #options {
+      float: left;
+        min-width: 60px;
+		width: 20%;
+		min-height: 500px;
+		height: 100%;
+		position: absolute;
+		border-right: 1px solid blue;
+		border-radius: 5px;
+		-moz-border-radius: 2px;
+		-webkit-border-radius: 2px;
+		    box-shadow: 2px 4px 5px #005377;
+		-moz-box-shadow: 2px 4px 5px #005377;
+    -webkit-box-shadow: 2px 4px 10px #005377;
+      }
+	  
+	  #title{
+		margin-left:auto;
+		margin-right:auto;
+		width: 90%;
+		padding: 2%;
+		margin-top: 2%;
+		margin-bottom:2%;
+		border-bottom: 1px solid blue;
+		font: 14px verdana;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	  }
+	  #radius{
+		width:90%;
+		margin-left:auto;
+		margin-right:auto;
+		padding: 2%
+	  }
+	  #radiotext{
+		font-family: Roboto;
+		font-size: 15px;
+		font-weight: 300;
+		opacity:1;
+	  }
+    </style>
+			
+    </head>
+    <body>
+<script  type="text/javascript">
+	
+var markers = []; //list of the restaurants that are displayed currently
+var map; // the map
+var infowindow; //infowindow 
+var user = localStorage.getItem("user");
+var rating=3;
+var i;
+var avgRating;
+var globalLat = 37.3382;
+var globalLng = -122.0863;
+
+function setName(input)
+{
+	user = input;
+	document.getElementById("name").innerHTML = user;
+	localStorage.setItem("user", user);
+	console.log(user);
+}
+
+function initMap() {
+	var rsCenter = {lat: globalLat, lng: globalLng};
+	map = new google.maps.Map(document.getElementById('map'), {
+		zoom: 11, //default zoom for the map
+		center: rsCenter
+	});	
+	var marker, marker2;
+	map.setCenter(rsCenter);	
+	showRestaurants();	
+	$(window).resize(function() {
+		// (the 'map' here is the result of the created 'var map = ...' above)
+		google.maps.event.trigger(map, "resize");
+	});
+}
+
+function setRating(star)
+{
+	rating = star;
+	console.log(user);
+}
+function didit(id)
+{
+	console.log(id);
+	$.post(" http://localhost/Chai/insertRating.php", {user:user, restaurantID:id, rating:rating}, function(data){
+		console.log(data);
+	});
+	console.log(user + " DID IT. THE ID IS " + id + " and the rating is "+ rating);
+	initMap();
+}
+
+function showRestaurants()
+{
+$.post( " http://localhost/Chai/chaiRestaurants.php", {}, function( data ) {
+		for(var j in data) {
+			marker = new google.maps.Marker({
+					name: data[j].name,
+					rating: data[j].average,
+				position: {
+					lat: parseFloat(data[j].longitude), 
+					lng: parseFloat(data[j].latitude)},
+					map: map,
+					title: 'Click for more info'
+			});
+			(function(marker, i) {
+				var globalLng = data[j].latitude;
+				var globalLat = data[j].longitude;
+				
+				if(data[j].average == null){
+					rating = "There are no reviews for this restaurant yet."
+				}
+				else
+					rating = "Average rating : " + data[j].average;
+				var contentString = '<h3 id="firstHeading" class="firstHeading">'+data[j].name +' '+'</h3>'+ 
+				data[j].address + ' '+ data[j].city+', '+'CA '+data[j].zip + 
+				'<br>'+rating+
+				'<br><div><form><input type="radio" name="rating" onclick="setRating(1)">1</input>'+
+				'<input type="radio" name="rating" onclick="setRating(2)">2</input>'+
+				'<input type="radio" name="rating" onclick="setRating(3)" checked>3</input>'+
+				'<input type="radio" name="rating" onclick="setRating(4)">4</input>'+
+				'<input type="radio" name="rating" onclick="setRating(5)">5</input></div></form>'+
+				'<button onclick="didit('+data[j].id+')">Submit</button>';
+				// add click event
+				
+				google.maps.event.addListener(marker, 'click', function() {
+					if (infowindow) infowindow.close();
+					infowindow = new google.maps.InfoWindow({
+						content: contentString
+					});
+					map.setZoom(12);
+					map.setCenter(marker.getPosition());
+					infowindow.open(map, marker);
+				});
+				markers.push(marker);
+			})(marker, i);
+			i++;    
+		}
+	}, "json");
+}
+
+function filterName(restaurant)
+{
+	clearFilter();
+	for(j in markers)
+	{		
+		if(markers[j].name != restaurant)
+		{
+			markers[j].setMap(null);
+		}
+	}
+}
+
+function clearFilter()
+{
+	for(j in markers)
+	{
+		markers[j].setMap(map);
+	}
+
+}
+</script>
+	<div id="mapsection">
+	
+
+<div id="map"></div>
+</body>
+	
+	
+    </html>
+	
+	
